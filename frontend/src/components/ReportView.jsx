@@ -5,13 +5,48 @@ const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g
 
 function renderMarkdownish(report) {
   const lines = report.split('\n')
-  return lines.map((line, index) => {
-    if (line.startsWith('# ')) return <h1 key={index}>{line.slice(2)}</h1>
-    if (line.startsWith('## ')) return <h2 key={index}>{line.slice(3)}</h2>
-    if (line.startsWith('- ')) return <li key={index}>{renderLinks(line.slice(2), index)}</li>
-    if (!line.trim()) return <br key={index} />
-    return <p key={index}>{renderLinks(line, index)}</p>
+  const blocks = []
+  let bulletItems = []
+
+  const flushBullets = () => {
+    if (!bulletItems.length) return
+    blocks.push(
+      <ul key={`list-${blocks.length}`} className="report-list">
+        {bulletItems}
+      </ul>,
+    )
+    bulletItems = []
+  }
+
+  lines.forEach((line, index) => {
+    if (line.startsWith('# ')) {
+      flushBullets()
+      blocks.push(<h1 key={index}>{line.slice(2)}</h1>)
+      return
+    }
+    if (line.startsWith('## ')) {
+      flushBullets()
+      blocks.push(<h2 key={index}>{line.slice(3)}</h2>)
+      return
+    }
+    if (line.startsWith('### ')) {
+      flushBullets()
+      blocks.push(<h3 key={index}>{line.slice(4)}</h3>)
+      return
+    }
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      bulletItems.push(<li key={index}>{renderLinks(line.slice(2), index)}</li>)
+      return
+    }
+    flushBullets()
+    if (!line.trim()) {
+      return
+    }
+    blocks.push(<p key={index}>{renderLinks(line, index)}</p>)
   })
+
+  flushBullets()
+  return blocks
 }
 
 function renderLinks(text, keyPrefix) {

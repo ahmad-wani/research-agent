@@ -17,12 +17,20 @@ function parseSse(buffer, onEvent) {
 export function useAgentStream() {
   const [events, setEvents] = useState([])
   const [report, setReport] = useState('')
+  const [tasks, setTasks] = useState([])
+  const [sources, setSources] = useState([])
+  const [taskProgress, setTaskProgress] = useState(0)
+  const [metrics, setMetrics] = useState({ findings: 0, sources: 0 })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const runResearch = async (query) => {
     setEvents([])
     setReport('')
+    setTasks([])
+    setSources([])
+    setTaskProgress(0)
+    setMetrics({ findings: 0, sources: 0 })
     setError('')
     setLoading(true)
 
@@ -44,11 +52,22 @@ export function useAgentStream() {
         const { value, done } = await reader.read()
         if (done) break
         buffer += decoder.decode(value, { stream: true })
-        buffer = parseSse(buffer, (stage, payload) => {
-          setEvents((current) => [...current, { stage, payload }])
+        buffer = parseSse(buffer, (eventName, payload) => {
+          setEvents((current) => [...current, { eventName, ...payload }])
+          if (Array.isArray(payload.tasks)) setTasks(payload.tasks)
+          if (typeof payload.current_task_index === 'number') {
+            setTaskProgress(payload.current_task_index)
+          }
+          if (Array.isArray(payload.sources)) {
+            setSources(payload.sources)
+            setMetrics((current) => ({ ...current, sources: payload.sources.length }))
+          }
+          if (typeof payload.findings_count === 'number') {
+            setMetrics((current) => ({ ...current, findings: payload.findings_count }))
+          }
           const nextReport = payload?.state?.report
           if (nextReport) setReport(nextReport)
-          if (stage === 'error') setError(payload.message || 'Research failed.')
+          if (eventName === 'error') setError(payload.message || 'Research failed.')
         })
       }
     } catch (err) {
@@ -58,5 +77,5 @@ export function useAgentStream() {
     }
   }
 
-  return { events, report, loading, error, runResearch }
+  return { events, report, tasks, sources, taskProgress, metrics, loading, error, runResearch }
 }
