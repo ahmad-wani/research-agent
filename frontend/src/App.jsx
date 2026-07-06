@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, FileText, Library, ListChecks, Sparkles } from 'lucide-react'
+import { Activity, FileText, Github, Library, Linkedin, ListChecks, Sparkles } from 'lucide-react'
 import QueryInput from './components/QueryInput.jsx'
 import AgentActivityPanel from './components/AgentActivityPanel.jsx'
 import DownloadReportButton from './components/DownloadReportButton.jsx'
@@ -7,6 +7,19 @@ import ReportView from './components/ReportView.jsx'
 import SourceList from './components/SourceList.jsx'
 import TaskChecklist from './components/TaskChecklist.jsx'
 import { useAgentStream } from './hooks/useAgentStream.js'
+
+const personalLinks = [
+  {
+    label: 'GitHub',
+    href: 'https://github.com/ahmad-wani',
+    Icon: Github,
+  },
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/ahmad-wani',
+    Icon: Linkedin,
+  },
+]
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -87,7 +100,9 @@ export default function App() {
               </div>
               {report && <DownloadReportButton query={query} report={report} />}
             </div>
-            <ReportView report={report} />
+            <div className="report-scroll">
+              <ReportView report={report} />
+            </div>
           </section>
 
           <section className="panel source-panel">
@@ -98,6 +113,18 @@ export default function App() {
             <SourceList sources={uniqueSources} />
           </section>
         </div>
+
+        <footer className="creator-footer">
+          <span>Built by Ahmad Wani</span>
+          <div className="creator-links">
+            {personalLinks.map(({ label, href, Icon }) => (
+              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}>
+                <Icon size={17} />
+                <span>{label}</span>
+              </a>
+            ))}
+          </div>
+        </footer>
       </section>
     </main>
   )
